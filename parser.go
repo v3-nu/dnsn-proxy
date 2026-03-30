@@ -14,10 +14,11 @@ type ParseResult struct {
 }
 
 // buildRegex constructs the matching regexp for the given suffix.
+// works with WildIP (e.g. 10.10.10.1.sslip.io or 10-11-12-13.dnsn.eu) and ipw4-type addresses (e.g. cat.nil.nil.cat.ipw4.com)
 func buildRegex(suffix string) *regexp.Regexp {
 	escaped := regexp.QuoteMeta(suffix)
 	pattern := fmt.Sprintf(
-		`(?i)^(?:(ssl|tls|https))?(\d{1,5})[.\-_](\d{1,3})[.\-_](\d{1,3})[.\-_](\d{1,3})[.\-_](\d{1,3})\.%s$`,
+		`(?i)^(?:(ssl|tls|https))?(\d{1,5})[.\-_](\d{1,3}|[a-zA-Z]{3})[.\-_](\d{1,3}|[a-zA-Z]{3})[.\-_](\d{1,3}|[a-zA-Z]{3})[.\-_](\d{1,3}|[a-zA-Z]{3})\.%s$`,
 		escaped,
 	)
 	return regexp.MustCompile(pattern)

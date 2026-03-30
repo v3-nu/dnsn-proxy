@@ -36,6 +36,10 @@ func domain(port int, proto string) string {
 	return proto + strconv.Itoa(port) + ".10-0-0-1." + e2eSuffix
 }
 
+func ipw4domain(port int, proto string) string {
+	return proto + strconv.Itoa(port) + ".bag.nil.nil.cat." + e2eSuffix
+}
+
 // nopNext is a no-op caddyhttp.Handler used as the "next" argument to ServeHTTP.
 // Our handler never calls next, but the interface must be satisfied.
 var nopNext = caddyhttp.HandlerFunc(func(http.ResponseWriter, *http.Request) error {
@@ -143,6 +147,42 @@ func TestE2E_MultipleBackends(t *testing.T) {
 	}
 }
 
+// TestE2E_MultipleBackends starts three backends each returning a distinct
+// string, then verifies that the proxy routes each domain to the correct one.
+func TestE2E_MultipleBackendsIpw4(t *testing.T) {
+	type backend struct {
+		label string
+		srv   *httptest.Server
+	}
+
+	backends := []backend{
+		{label: "backend-apple"},
+		{label: "backend-banana"},
+		{label: "backend-cherry"},
+	}
+	for i := range backends {
+		lbl := backends[i].label
+		backends[i].srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(lbl)) //nolint:errcheck
+		}))
+		t.Cleanup(backends[i].srv.Close)
+	}
+
+	proxy := newProxy(t, "127.0.0.1", false)
+
+	for _, b := range backends {
+		resp := get(t, proxy, ipw4domain(backendPort(b.srv), ""), "/")
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(resp.Body)
+			t.Errorf("[%s] status: want 200, got %d: %s", b.label, resp.StatusCode, body)
+			continue
+		}
+		if got := body(t, resp); got != b.label {
+			t.Errorf("[%s] body: want %q, got %q", b.label, b.label, got)
+		}
+	}
+}
+
 // TestE2E_InvalidDomain_Returns400 checks that a Host header that doesn't
 // match the configured suffix returns 400 Bad Request.
 func TestE2E_InvalidDomain_Returns400(t *testing.T) {
@@ -150,7 +190,7 @@ func TestE2E_InvalidDomain_Returns400(t *testing.T) {
 
 	cases := []string{
 		"not-a-valid-domain.example.com",
-		"hello.proxy.test",          // no port/IP
+		"hello.proxy.test",           // no port/IP
 		"3030.10-167-100.proxy.test", // only 3 octets
 	}
 	for _, host := range cases {
