@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+
+name="dnsn-proxy"
+description="dnsn-proxy TLS-terminating reverse proxy"
+command="/usr/bin/dnsn-proxy"
+command_background=yes
+pidfile="/run/dnsn-proxy.pid"
+output_log="/var/log/dnsn-proxy/output.log"
+error_log="/var/log/dnsn-proxy/error.log"
+
+# /etc/conf.d/dnsn-proxy is sourced automatically by OpenRC.
+# Set DNSN_ARGS there, e.g.:
+#   DNSN_ARGS="--suffix dnsn.eu --backend localhost --acme-email you@example.com"
+command_args="${DNSN_ARGS}"
+
+# HOME must point to a writable directory so certmagic can store certificates.
+export HOME=/var/lib/dnsn-proxy
+
+depend() {
+    need net
+    after firewall
+}
+
+start_pre() {
+    mkdir -p /var/lib/dnsn-proxy /var/log/dnsn-proxy
+    checkpath -d -m 0750 /var/lib/dnsn-proxy
+}

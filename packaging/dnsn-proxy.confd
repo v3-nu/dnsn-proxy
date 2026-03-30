@@ -1,0 +1,5 @@
+# dnsn-proxy configuration (OpenRC / Alpine)
+# This file is sourced by /etc/init.d/dnsn-proxy.
+# Run `dnsn-proxy --help` to see all available options.
+
+DNSN_ARGS="--suffix dnsn.eu --backend localhost --acme-email admin@example.com"

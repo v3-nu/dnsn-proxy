@@ -1,0 +1,35 @@
+[Unit]
+Description=dnsn-proxy — TLS-terminating reverse proxy
+Documentation=https://github.com/v3-nu/dnsn-proxy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dnsn-proxy
+Group=dnsn-proxy
+
+# Cert storage: certmagic uses $HOME/.local/share/caddy
+Environment=HOME=/var/lib/dnsn-proxy
+
+# Edit /etc/dnsn-proxy/env to configure flags:
+#   DNSN_ARGS="--suffix dnsn.eu --backend localhost --acme-email you@example.com"
+EnvironmentFile=/etc/dnsn-proxy/env
+ExecStart=/usr/bin/dnsn-proxy $DNSN_ARGS
+
+Restart=on-failure
+RestartSec=5s
+
+# Allow binding to ports 80 and 443 without running as root.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/dnsn-proxy
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

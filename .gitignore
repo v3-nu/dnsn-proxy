@@ -1,0 +1,6 @@
+dnsn-proxy
+__debug*
+/.**
+!.github/
+!.gitignore
+/dnsn-proxy
