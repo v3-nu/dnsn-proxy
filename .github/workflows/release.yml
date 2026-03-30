@@ -34,9 +34,9 @@ jobs:
         args: release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_DEBPKG-AMD_SECRET: ${{ secrets.PACKAGE_REGISTRY_SECRET }}
-        UPLOAD_APKPKG-AMD_SECRET: ${{ secrets.PACKAGE_REGISTRY_SECRET }}
-        UPLOAD_RPMPKG-AMD_SECRET: ${{ secrets.PACKAGE_REGISTRY_SECRET }}
+        UPLOAD_DEBPKG_SECRET: ${{ secrets.PACKAGE_REGISTRY_SECRET }}
+        UPLOAD_APKPKG_SECRET: ${{ secrets.PACKAGE_REGISTRY_SECRET }}
+        UPLOAD_RPMPKG_SECRET: ${{ secrets.PACKAGE_REGISTRY_SECRET }}
     
     - name: Release
       uses: softprops/action-gh-release@v2

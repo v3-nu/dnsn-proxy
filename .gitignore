@@ -5,3 +5,5 @@ __debug*
 !.github/**
 !.gitignore
 /dnsn-proxy
+
+dist/
