@@ -1,0 +1,19 @@
+# dnsn-proxy configuration
+# See https://github.com/v3-nu/dnsn-proxy for documentation.
+
+suffix: dnsn.eu
+backend: localhost
+acme_email: admin@example.com
+
+# acme_ca: https://acme-v02.api.letsencrypt.org/directory
+# http_port: 80
+# https_port: 443
+# insecure_backend: false
+# ask_port: 19999
+
+# Route additional fixed hostnames to specific backends.
+# additional_hosts:
+#   - hostname: myapp.example.com
+#     backend: 192.168.1.10
+#     port: 8080
+#     ssl: false

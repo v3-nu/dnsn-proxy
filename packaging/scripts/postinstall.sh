@@ -10,6 +10,6 @@ systemctl enable dnsn-proxy.service
 
 echo ""
 echo "dnsn-proxy installed."
-echo "  1. Edit /etc/dnsn-proxy/env to set your domain suffix and ACME email."
+echo "  1. Edit /etc/dnsn-proxy/config.yaml to set your domain suffix and ACME email."
 echo "  2. Run: systemctl start dnsn-proxy"
 echo ""

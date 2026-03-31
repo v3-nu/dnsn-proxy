@@ -10,6 +10,6 @@ rc-update add dnsn-proxy default
 
 echo ""
 echo "dnsn-proxy installed."
-echo "  1. Edit /etc/conf.d/dnsn-proxy to set your domain suffix and ACME email."
+echo "  1. Edit /etc/dnsn-proxy/config.yaml to set your domain suffix and ACME email."
 echo "  2. Run: rc-service dnsn-proxy start"
 echo ""

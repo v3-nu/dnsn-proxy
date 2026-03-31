@@ -8,10 +8,8 @@ pidfile="/run/dnsn-proxy.pid"
 output_log="/var/log/dnsn-proxy/output.log"
 error_log="/var/log/dnsn-proxy/error.log"
 
-# /etc/conf.d/dnsn-proxy is sourced automatically by OpenRC.
-# Set DNSN_ARGS there, e.g.:
-#   DNSN_ARGS="--suffix dnsn.eu --backend localhost --acme-email you@example.com"
-command_args="${DNSN_ARGS}"
+# Edit /etc/dnsn-proxy/config.yaml to configure the proxy.
+command_args="--config /etc/dnsn-proxy/config.yaml"
 
 # HOME must point to a writable directory so certmagic can store certificates.
 export HOME=/var/lib/dnsn-proxy

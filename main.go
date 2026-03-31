@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
+	"gopkg.in/yaml.v3"
 
 	// Register built-in Caddy modules.
 	_ "github.com/caddyserver/caddy/v2/modules/caddyhttp"
@@ -21,30 +22,74 @@ import (
 	_ "github.com/caddyserver/caddy/v2/modules/caddytls"
 )
 
+// AdditionalHost maps a fixed hostname to a specific backend server and port.
+type AdditionalHost struct {
+	Hostname string `yaml:"hostname" json:"hostname"`
+	Backend  string `yaml:"backend"  json:"backend"`
+	Port     int    `yaml:"port"     json:"port"`
+	SSL      bool   `yaml:"ssl"      json:"ssl,omitempty"`
+}
+
+// Config holds all runtime configuration loaded from the YAML config file.
+type Config struct {
+	Suffix          string           `yaml:"suffix"`
+	Backend         string           `yaml:"backend"`
+	AcmeCA          string           `yaml:"acme_ca"`
+	AcmeEmail       string           `yaml:"acme_email"`
+	HTTPPort        int              `yaml:"http_port"`
+	HTTPSPort       int              `yaml:"https_port"`
+	InsecureBackend bool             `yaml:"insecure_backend"`
+	AskPort         int              `yaml:"ask_port"`
+	AdditionalHosts []AdditionalHost `yaml:"additional_hosts"`
+}
+
+func loadConfig(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, err
+	}
+	if cfg.AcmeCA == "" {
+		cfg.AcmeCA = "https://acme-v02.api.letsencrypt.org/directory"
+	}
+	if cfg.HTTPPort == 0 {
+		cfg.HTTPPort = 80
+	}
+	if cfg.HTTPSPort == 0 {
+		cfg.HTTPSPort = 443
+	}
+	if cfg.AskPort == 0 {
+		cfg.AskPort = 19999
+	}
+	return &cfg, nil
+}
+
 func main() {
-	suffix := flag.String("suffix", "dnsn.eu", "Domain suffix handled by this proxy")
-	backend := flag.String("backend", "localhost", "Backend host to proxy to")
-	acmeCA := flag.String("acme-ca", "https://acme-v02.api.letsencrypt.org/directory", "ACME CA directory URL")
-	acmeEmail := flag.String("acme-email", "", "Email for ACME registration")
-	httpPort := flag.Int("http-port", 80, "HTTP listen port")
-	httpsPort := flag.Int("https-port", 443, "HTTPS listen port")
-	insecureBackend := flag.Bool("insecure-backend", false, "Skip TLS verification for backend")
-	askPort := flag.Int("ask-port", 19999, "Port for the on-demand TLS ask server")
+	configPath := flag.String("config", "/etc/dnsn-proxy/config.yaml", "Path to the YAML configuration file")
 	flag.Parse()
 
-	// Start the ask server before Caddy so it is ready when Caddy needs it.
-	askSrv := startAskServer(*askPort, *suffix)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		log.Fatalf("load config: %v", err)
+	}
 
-	cfg, err := buildConfig(*suffix, *backend, *acmeCA, *acmeEmail, *httpPort, *httpsPort, *insecureBackend, *askPort)
+	// Start the ask server before Caddy so it is ready when Caddy needs it.
+	askSrv := startAskServer(cfg.AskPort, cfg.Suffix, cfg.AdditionalHosts)
+
+	caddyCfg, err := buildConfig(cfg)
 	if err != nil {
 		log.Fatalf("build config: %v", err)
 	}
 
-	if err := caddy.Load(cfg, true); err != nil {
+	if err := caddy.Load(caddyCfg, true); err != nil {
 		log.Fatalf("caddy load: %v", err)
 	}
 
-	log.Printf("dnsn-proxy running (suffix=%s backend=%s https=:%d http=:%d)", *suffix, *backend, *httpsPort, *httpPort)
+	log.Printf("dnsn-proxy running (suffix=%s backend=%s https=:%d http=:%d)",
+		cfg.Suffix, cfg.Backend, cfg.HTTPSPort, cfg.HTTPPort)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -64,8 +109,9 @@ func main() {
 }
 
 // startAskServer runs a tiny HTTP server on 127.0.0.1:{port}.
-// Caddy calls GET /?domain=<fqdn>; we return 200 if it ends with the suffix.
-func startAskServer(port int, suffix string) *http.Server {
+// Caddy calls GET /?domain=<fqdn>; we return 200 if the domain matches the
+// suffix pattern or is listed in additionalHosts.
+func startAskServer(port int, suffix string, additionalHosts []AdditionalHost) *http.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		domain := r.URL.Query().Get("domain")
@@ -73,6 +119,12 @@ func startAskServer(port int, suffix string) *http.Server {
 		if _, ok := ParseDomain(re, domain); ok {
 			w.WriteHeader(http.StatusOK)
 			return
+		}
+		for _, h := range additionalHosts {
+			if h.Hostname == domain {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
 		}
 		http.Error(w, "not allowed", http.StatusForbidden)
 	})
@@ -92,8 +144,8 @@ func startAskServer(port int, suffix string) *http.Server {
 }
 
 // buildConfig constructs the Caddy JSON configuration.
-func buildConfig(suffix, backend, acmeCA, acmeEmail string, httpPort, httpsPort int, insecureBackend bool, askPort int) ([]byte, error) {
-	cfg := map[string]interface{}{
+func buildConfig(cfg *Config) ([]byte, error) {
+	c := map[string]interface{}{
 		"admin": map[string]interface{}{
 			"disabled": true,
 		},
@@ -101,7 +153,7 @@ func buildConfig(suffix, backend, acmeCA, acmeEmail string, httpPort, httpsPort 
 			"http": map[string]interface{}{
 				"servers": map[string]interface{}{
 					"https_srv": map[string]interface{}{
-						"listen": []string{fmt.Sprintf(":%d", httpsPort)},
+						"listen": []string{fmt.Sprintf(":%d", cfg.HTTPSPort)},
 						"automatic_https": map[string]interface{}{
 							"disable": true,
 						},
@@ -113,16 +165,17 @@ func buildConfig(suffix, backend, acmeCA, acmeEmail string, httpPort, httpsPort 
 								"handle": []interface{}{
 									map[string]interface{}{
 										"handler":          "dnsn_proxy",
-										"suffix":           suffix,
-										"backend":          backend,
-										"insecure_backend": insecureBackend,
+										"suffix":           cfg.Suffix,
+										"backend":          cfg.Backend,
+										"insecure_backend": cfg.InsecureBackend,
+										"additional_hosts": cfg.AdditionalHosts,
 									},
 								},
 							},
 						},
 					},
 					"http_srv": map[string]interface{}{
-						"listen": []string{fmt.Sprintf(":%d", httpPort)},
+						"listen": []string{fmt.Sprintf(":%d", cfg.HTTPPort)},
 						"automatic_https": map[string]interface{}{
 							"disable": true,
 						},
@@ -147,7 +200,7 @@ func buildConfig(suffix, backend, acmeCA, acmeEmail string, httpPort, httpsPort 
 					"on_demand": map[string]interface{}{
 						"permission": map[string]interface{}{
 							"module":   "http",
-							"endpoint": fmt.Sprintf("http://127.0.0.1:%d/", askPort),
+							"endpoint": fmt.Sprintf("http://127.0.0.1:%d/", cfg.AskPort),
 						},
 					},
 					"policies": []interface{}{
@@ -156,8 +209,8 @@ func buildConfig(suffix, backend, acmeCA, acmeEmail string, httpPort, httpsPort 
 							"issuers": []interface{}{
 								map[string]interface{}{
 									"module": "acme",
-									"ca":     acmeCA,
-									"email":  acmeEmail,
+									"ca":     cfg.AcmeCA,
+									"email":  cfg.AcmeEmail,
 								},
 							},
 						},
@@ -167,5 +220,5 @@ func buildConfig(suffix, backend, acmeCA, acmeEmail string, httpPort, httpsPort 
 		},
 	}
 
-	return json.MarshalIndent(cfg, "", "  ")
+	return json.MarshalIndent(c, "", "  ")
 }

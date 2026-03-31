@@ -12,10 +12,7 @@ Group=dnsn-proxy
 # Cert storage: certmagic uses $HOME/.local/share/caddy
 Environment=HOME=/var/lib/dnsn-proxy
 
-# Edit /etc/dnsn-proxy/env to configure flags:
-#   DNSN_ARGS="--suffix dnsn.eu --backend localhost --acme-email you@example.com"
-EnvironmentFile=/etc/dnsn-proxy/env
-ExecStart=/usr/bin/dnsn-proxy $DNSN_ARGS
+ExecStart=/usr/bin/dnsn-proxy --config /etc/dnsn-proxy/config.yaml
 
 Restart=on-failure
 RestartSec=5s
