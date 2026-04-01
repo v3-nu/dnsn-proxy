@@ -1,0 +1,219 @@
+version: 2
+
+project_name: dnsn-proxy
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: dnsn-proxy
+    binary: dnsn-proxy
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+# One docker entry per registry × arch.
+# Each entry produces an arch-qualified tag (e.g. :v1.2.3-amd64 and :latest-amd64).
+# docker_manifests below merges the arch-specific tags into the final multi-arch ones.
+dockers:
+  - id: ghcr-amd64
+    ids: [dnsn-proxy]
+    goarch: amd64
+    use: buildx
+    dockerfile: Dockerfile
+    image_templates:
+      - ghcr.io/v3-nu/dnsn-proxy:{{ .Tag }}-amd64
+      - ghcr.io/v3-nu/dnsn-proxy:latest-amd64
+    build_flag_templates:
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.source=https://github.com/v3-nu/dnsn-proxy
+
+  - id: ghcr-arm64
+    ids: [dnsn-proxy]
+    goarch: arm64
+    use: buildx
+    dockerfile: Dockerfile
+    image_templates:
+      - ghcr.io/v3-nu/dnsn-proxy:{{ .Tag }}-arm64
+      - ghcr.io/v3-nu/dnsn-proxy:latest-arm64
+    build_flag_templates:
+      - --platform=linux/arm64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.source=https://github.com/v3-nu/dnsn-proxy
+
+  - id: cycr-amd64
+    ids: [dnsn-proxy]
+    goarch: amd64
+    use: buildx
+    dockerfile: Dockerfile
+    image_templates:
+      - cycr.io/v3-nu/dnsn-proxy:{{ .Tag }}-amd64
+      - cycr.io/v3-nu/dnsn-proxy:latest-amd64
+    build_flag_templates:
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.source=https://github.com/v3-nu/dnsn-proxy
+
+  - id: cycr-arm64
+    ids: [dnsn-proxy]
+    goarch: arm64
+    use: buildx
+    dockerfile: Dockerfile
+    image_templates:
+      - cycr.io/v3-nu/dnsn-proxy:{{ .Tag }}-arm64
+      - cycr.io/v3-nu/dnsn-proxy:latest-arm64
+    build_flag_templates:
+      - --platform=linux/arm64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.source=https://github.com/v3-nu/dnsn-proxy
+
+nfpms:
+  - id: packages
+    ids: [dnsn-proxy]
+    package_name: dnsn-proxy
+    vendor: v3-nu
+    homepage: https://github.com/v3-nu/dnsn-proxy
+    maintainer: v3-nu <hello@v3.nu>
+    description: >-
+      TLS-terminating reverse proxy that encodes the backend port and scheme
+      in the incoming domain name, with on-demand ACME certificate issuance.
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    bindir: /usr/bin
+
+    contents:
+      # systemd unit — deb uses /lib/systemd, rpm uses /usr/lib/systemd
+      - src: packaging/dnsn-proxy.service
+        dst: /usr/lib/systemd/system/dnsn-proxy.service
+        packager: deb
+      - src: packaging/dnsn-proxy.service
+        dst: /usr/lib/systemd/system/dnsn-proxy.service
+        packager: rpm
+
+      # OpenRC init script for Alpine
+      - src: packaging/dnsn-proxy.openrc
+        dst: /etc/init.d/dnsn-proxy
+        file_info:
+          mode: 0755
+        packager: apk
+
+      # YAML config file — not replaced on upgrade if user has edited it
+      - src: packaging/dnsn-proxy.yaml
+        dst: /etc/dnsn-proxy/config.yaml
+        type: config|noreplace
+        packager: deb
+      - src: packaging/dnsn-proxy.yaml
+        dst: /etc/dnsn-proxy/config.yaml
+        type: config|noreplace
+        packager: rpm
+      - src: packaging/dnsn-proxy.yaml
+        dst: /etc/dnsn-proxy/config.yaml
+        type: config|noreplace
+        packager: apk
+
+      # Cert / state directory (created with restricted permissions)
+      - dst: /var/lib/dnsn-proxy
+        type: dir
+        file_info:
+          owner: dnsn-proxy
+          group: dnsn-proxy
+          mode: 0750
+
+    # deb / rpm: use shadow-utils commands and systemctl
+    scripts:
+      preinstall:  packaging/scripts/preinstall.sh
+      postinstall: packaging/scripts/postinstall.sh
+      preremove:   packaging/scripts/preremove.sh
+
+    # apk: use busybox adduser/addgroup and rc-update
+    overrides:
+      apk:
+        scripts:
+          preinstall:  packaging/scripts/preinstall_apk.sh
+          postinstall: packaging/scripts/postinstall_apk.sh
+          preremove:   packaging/scripts/preremove_apk.sh
+
+docker_manifests:
+  - name_template: ghcr.io/v3-nu/dnsn-proxy:{{ .Tag }}
+    image_templates:
+      - ghcr.io/v3-nu/dnsn-proxy:{{ .Tag }}-amd64
+      - ghcr.io/v3-nu/dnsn-proxy:{{ .Tag }}-arm64
+
+  - name_template: ghcr.io/v3-nu/dnsn-proxy:latest
+    image_templates:
+      - ghcr.io/v3-nu/dnsn-proxy:latest-amd64
+      - ghcr.io/v3-nu/dnsn-proxy:latest-arm64
+
+  - name_template: cycr.io/v3-nu/dnsn-proxy:{{ .Tag }}
+    image_templates:
+      - cycr.io/v3-nu/dnsn-proxy:{{ .Tag }}-amd64
+      - cycr.io/v3-nu/dnsn-proxy:{{ .Tag }}-arm64
+
+  - name_template: cycr.io/v3-nu/dnsn-proxy:latest
+    image_templates:
+      - cycr.io/v3-nu/dnsn-proxy:latest-amd64
+      - cycr.io/v3-nu/dnsn-proxy:latest-arm64
+
+uploads:
+  - name: "debpkg"
+    ids: ["packages"]
+    method: "PUT"
+    exts:
+      - deb
+    mode: archive
+    username: "dnsn-proxy"
+    target: https://net.scheibling.se/api/packages/linux/debian/pool/all/main/upload
+    custom_artifact_name: true
+  
+  - name: "apkpkg"
+    method: "PUT"
+    ids: ["packages"]
+    exts:
+      - apk
+    mode: archive
+    username: "dnsn-proxy"
+    target: https://net.scheibling.se/api/packages/linux/alpine/all/repository
+    custom_artifact_name: true
+  
+  - name: "rpmpkg"
+    method: "PUT"
+    ids: ["packages"]
+    exts:
+      - rpm
+    mode: archive
+    username: "dnsn-proxy"
+    target: https://net.scheibling.se/api/packages/linux/rpm/upload
+    custom_artifact_name: true
+  
+release:
+  disable: true

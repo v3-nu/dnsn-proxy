@@ -1,0 +1,41 @@
+# dnsn-proxy example configuration
+# Copy this file to /etc/dnsn-proxy/config.yaml and adjust as needed.
+
+# The wildcard DNS suffix that dnsn-proxy listens for.
+# Requests for <port>.<ip>.dnsn.eu and ssl<port>.<ip>.dnsn.eu will be handled.
+suffix: dnsn.eu
+
+# The backend host to proxy requests to. Typically localhost or a LAN IP.
+backend: localhost
+
+# Email address used when requesting TLS certificates from the ACME CA.
+acme_email: admin@example.com
+
+# ACME certificate authority directory URL.
+# Defaults to Let's Encrypt production; use the staging URL for testing.
+# acme_ca: https://acme-v02.api.letsencrypt.org/directory
+# acme_ca: https://acme-staging-v02.api.letsencrypt.org/directory
+
+# Ports to listen on (defaults shown).
+# http_port: 80
+# https_port: 443
+
+# Skip TLS verification when connecting to the backend.
+# Only enable this if your backend uses a self-signed certificate.
+# insecure_backend: false
+
+# Port for the internal ACME on-demand ask server (localhost only).
+# Only change this if 19999 is already in use on this machine.
+# ask_port: 19999
+
+# Route additional fixed hostnames to specific backends.
+# Matched before the wildcard dnsn domain pattern.
+# additional_hosts:
+#   - hostname: grafana.example.com
+#     backend: 192.168.1.20
+#     port: 3000
+#     ssl: false 
+#   - hostname: vault.example.com
+#     backend: 192.168.1.30
+#     port: 8200
+#     ssl: true

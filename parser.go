@@ -18,7 +18,7 @@ type ParseResult struct {
 func buildRegex(suffix string) *regexp.Regexp {
 	escaped := regexp.QuoteMeta(suffix)
 	pattern := fmt.Sprintf(
-		`(?i)^(?:(ssl|tls|https))?(\d{1,5})[.\-_](\d{1,3}|[a-zA-Z]{3})[.\-_](\d{1,3}|[a-zA-Z]{3})[.\-_](\d{1,3}|[a-zA-Z]{3})[.\-_](\d{1,3}|[a-zA-Z]{3})\.%s$`,
+		`(?i)^([a-zA-Z0-9]+[\._-])?(?:(ssl|tls|https))?(\d{1,5})([.\-_](\d{1,3}|[a-zA-Z]{3})[.\-_](\d{1,3}|[a-zA-Z]{3})[.\-_](\d{1,3}|[a-zA-Z]{3})[.\-_](\d{1,3}|[a-zA-Z]{3}))?[.\-_]%s$`,
 		escaped,
 	)
 	return regexp.MustCompile(pattern)
@@ -35,10 +35,10 @@ func ParseDomain(re *regexp.Regexp, fqdn string) (ParseResult, bool) {
 		return ParseResult{}, false
 	}
 
-	proto := strings.ToLower(m[1])
+	proto := strings.ToLower(m[2])
 	useSSL := proto == "ssl" || proto == "tls" || proto == "https"
 
-	port, err := strconv.Atoi(m[2])
+	port, err := strconv.Atoi(m[3])
 	if err != nil || port < 1 || port > 65535 {
 		return ParseResult{}, false
 	}
