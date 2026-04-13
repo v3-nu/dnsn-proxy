@@ -1,0 +1,12 @@
+services:
+  dnsn:
+    image: ghcr.io/v3-nu/dnsn-proxy:latest
+    command:
+      - "-acme-ca"
+      - "https://ca.cloudyne.io/acme/acme/directory"
+      - "-backend"
+      - "localhost"
+      - "-insecure-backend"
+      - "-suffix"
+      - "loc"
+    network_mode: host

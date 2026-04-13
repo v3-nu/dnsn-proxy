@@ -191,8 +191,8 @@ uploads:
     exts:
       - deb
     mode: archive
-    username: "dnsn-proxy"
-    target: https://net.scheibling.se/api/packages/linux/debian/pool/all/main/upload
+    username: "pkg-push"
+    target: https://debian.pkg.lv/upload?dist=all&component=main
     custom_artifact_name: true
   
   - name: "apkpkg"
@@ -201,8 +201,8 @@ uploads:
     exts:
       - apk
     mode: archive
-    username: "dnsn-proxy"
-    target: https://net.scheibling.se/api/packages/linux/alpine/all/repository
+    username: "pkg-push"
+    target: https://alpine.pkg.lv/upload?repo=all
     custom_artifact_name: true
   
   - name: "rpmpkg"
@@ -211,8 +211,8 @@ uploads:
     exts:
       - rpm
     mode: archive
-    username: "dnsn-proxy"
-    target: https://net.scheibling.se/api/packages/linux/rpm/upload
+    username: "pkg-push"
+    target: https://rpm.pkg.lv/upload?repo=all&component=main
     custom_artifact_name: true
   
 release:
