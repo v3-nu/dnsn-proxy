@@ -192,7 +192,7 @@ uploads:
       - deb
     mode: archive
     username: "pkg-push"
-    target: https://debian.pkg.lv/upload?dist=all&component=main
+    target: https://deb.pkg.lv/upload?dist=all&component=main
     custom_artifact_name: true
   
   - name: "apkpkg"
