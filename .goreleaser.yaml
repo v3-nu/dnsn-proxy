@@ -174,16 +174,6 @@ docker_manifests:
       - ghcr.io/v3-nu/dnsn-proxy:latest-amd64
       - ghcr.io/v3-nu/dnsn-proxy:latest-arm64
 
-  - name_template: cycr.io/v3-nu/dnsn-proxy:{{ .Tag }}
-    image_templates:
-      - cycr.io/v3-nu/dnsn-proxy:{{ .Tag }}-amd64
-      - cycr.io/v3-nu/dnsn-proxy:{{ .Tag }}-arm64
-
-  - name_template: cycr.io/v3-nu/dnsn-proxy:latest
-    image_templates:
-      - cycr.io/v3-nu/dnsn-proxy:latest-amd64
-      - cycr.io/v3-nu/dnsn-proxy:latest-arm64
-
 uploads:
   - name: "debpkg"
     ids: ["packages"]
