@@ -43,4 +43,7 @@ jobs:
       with:
         files: |
           README.md
-          dist/**
+          dist/*.apk
+          dist/*.deb
+          dist/*.rpm
+          dist/*.tar.gz

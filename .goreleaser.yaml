@@ -206,4 +206,7 @@ uploads:
     custom_artifact_name: true
   
 release:
-  disable: true
+  github:
+    owner: v3-nu
+    name: dnsn-proxy
+    
