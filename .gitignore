@@ -2,3 +2,4 @@ dnsn-proxy
 __debug*
 /dnsn-proxy
 dist/
+config.yaml

@@ -36,6 +36,10 @@ type Config struct {
 	Backend         string           `yaml:"backend"`
 	AcmeCA          string           `yaml:"acme_ca"`
 	AcmeEmail       string           `yaml:"acme_email"`
+	AcmeEabKid      string           `yaml:"acme_eab_kid"`
+	AcmeEabHmacKey  string           `yaml:"acme_eab_hmac_key"`
+	TLSCert         string           `yaml:"tls_cert"`
+	TLSKey          string           `yaml:"tls_key"`
 	HTTPPort        int              `yaml:"http_port"`
 	HTTPSPort       int              `yaml:"https_port"`
 	InsecureBackend bool             `yaml:"insecure_backend"`
@@ -211,6 +215,17 @@ func buildConfig(cfg *Config) ([]byte, error) {
 									"module": "acme",
 									"ca":     cfg.AcmeCA,
 									"email":  cfg.AcmeEmail,
+									// "external_account": map[string]interface{}{
+									// 	"key_id":  cfg.AcmeEabKid,
+									// 	"mac_key": cfg.AcmeEabHmacKey,
+									// },
+									// "challenges": map[string]interface{}{
+									// 	"dns": map[string]interface{}{
+									// 		"provider": map[string]string{
+									// 			"name": "noop",
+									// 		},
+									// 	},
+									// },
 								},
 							},
 						},

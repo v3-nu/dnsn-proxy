@@ -1,4 +1,4 @@
-module dnsn-proxy
+module github.com/v3-nu/dnsn-proxy
 
 go 1.22
 
