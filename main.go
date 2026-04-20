@@ -157,7 +157,7 @@ func buildConfig(cfg *Config) ([]byte, error) {
 			"http": map[string]interface{}{
 				"servers": map[string]interface{}{
 					"https_srv": map[string]interface{}{
-						"listen": []string{fmt.Sprintf(":%d", cfg.HTTPSPort)},
+						"listen": []string{fmt.Sprintf("0.0.0.0:%d", cfg.HTTPSPort)},
 						"automatic_https": map[string]interface{}{
 							"disable": true,
 						},
@@ -179,7 +179,7 @@ func buildConfig(cfg *Config) ([]byte, error) {
 						},
 					},
 					"http_srv": map[string]interface{}{
-						"listen": []string{fmt.Sprintf(":%d", cfg.HTTPPort)},
+						"listen": []string{fmt.Sprintf("0.0.0.0:%d", cfg.HTTPPort)},
 						"automatic_https": map[string]interface{}{
 							"disable": true,
 						},
