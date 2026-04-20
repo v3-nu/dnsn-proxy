@@ -199,41 +199,58 @@ func buildConfig(cfg *Config) ([]byte, error) {
 					},
 				},
 			},
-			"tls": map[string]interface{}{
-				"automation": map[string]interface{}{
-					"on_demand": map[string]interface{}{
-						"permission": map[string]interface{}{
-							"module":   "http",
-							"endpoint": fmt.Sprintf("http://127.0.0.1:%d/", cfg.AskPort),
-						},
+			"tls": buildTLSConfig(cfg),
+		},
+	}
+
+	return json.MarshalIndent(c, "", "  ")
+}
+
+func buildTLSConfig(cfg *Config) map[string]interface{} {
+	if cfg.TLSCert != "" && cfg.TLSKey != "" {
+		return map[string]interface{}{
+			"certificates": map[string]interface{}{
+				"load_files": []interface{}{
+					map[string]interface{}{
+						"certificate": cfg.TLSCert,
+						"key":         cfg.TLSKey,
 					},
-					"policies": []interface{}{
+				},
+			},
+		}
+	}
+
+	return map[string]interface{}{
+		"automation": map[string]interface{}{
+			"on_demand": map[string]interface{}{
+				"permission": map[string]interface{}{
+					"module":   "http",
+					"endpoint": fmt.Sprintf("http://127.0.0.1:%d/", cfg.AskPort),
+				},
+			},
+			"policies": []interface{}{
+				map[string]interface{}{
+					"on_demand": true,
+					"issuers": []interface{}{
 						map[string]interface{}{
-							"on_demand": true,
-							"issuers": []interface{}{
-								map[string]interface{}{
-									"module": "acme",
-									"ca":     cfg.AcmeCA,
-									"email":  cfg.AcmeEmail,
-									// "external_account": map[string]interface{}{
-									// 	"key_id":  cfg.AcmeEabKid,
-									// 	"mac_key": cfg.AcmeEabHmacKey,
-									// },
-									// "challenges": map[string]interface{}{
-									// 	"dns": map[string]interface{}{
-									// 		"provider": map[string]string{
-									// 			"name": "noop",
-									// 		},
-									// 	},
-									// },
-								},
-							},
+							"module": "acme",
+							"ca":     cfg.AcmeCA,
+							"email":  cfg.AcmeEmail,
+							// "external_account": map[string]interface{}{
+							// 	"key_id":  cfg.AcmeEabKid,
+							// 	"mac_key": cfg.AcmeEabHmacKey,
+							// },
+							// "challenges": map[string]interface{}{
+							// 	"dns": map[string]interface{}{
+							// 		"provider": map[string]string{
+							// 			"name": "noop",
+							// 		},
+							// 	},
+							// },
 						},
 					},
 				},
 			},
 		},
 	}
-
-	return json.MarshalIndent(c, "", "  ")
 }
